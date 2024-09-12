@@ -5,7 +5,10 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { trxReqWallet } from './models/trxReqWallet.model';
-import { trxReqSubscribe } from './models/trxReqSubscribe.model';
+import {
+  SUBSCRIBE_TYPE,
+  trxReqSubscribe,
+} from './models/trxReqSubscribe.model';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -26,12 +29,20 @@ export class TrxReqService {
       .leftJoinAndSelect('trxReqSubscribe.wallet', 'trxReqWallet');
   }
 
-  async findSubscribe(wallet: string, amount: string, callbackUrl: string) {
+  async findSubscribe(
+    wallet: string,
+    amount: string,
+    callbackUrl: string,
+    subscribeType: string
+  ) {
     return this.getRequestQB()
       .where('"trxReqWallet"."address" = :wallet', { wallet })
       .andWhere('"trxReqSubscribe"."amount" = :amount', { amount })
       .andWhere('"trxReqSubscribe"."callbackUrl" = :callbackUrl', {
         callbackUrl,
+      })
+      .andWhere('"trxReqSubscribe"."subscribeType" = :subscribeType', {
+        subscribeType,
       })
       .getOne();
   }
@@ -53,15 +64,18 @@ export class TrxReqService {
     targetWallet,
     targetAmount,
     callbackUrl,
+    subscribeType,
   }: {
     targetWallet: string;
     targetAmount: string;
     callbackUrl: string;
+    subscribeType: string;
   }) {
     const existingSubscribe = await this.findSubscribe(
       targetWallet,
       targetAmount,
-      callbackUrl
+      callbackUrl,
+      subscribeType
     );
 
     if (existingSubscribe) {
@@ -76,9 +90,16 @@ export class TrxReqService {
         HttpStatus.OK
       );
     } else {
+      // const getSubscribeType = (value) => {
+      //   return Object.keys(SUBSCRIBE_TYPE).find(
+      //     (r) => SUBSCRIBE_TYPE[r] === value
+      //   );
+      // };
       const newSubscribe = new trxReqSubscribe({
         amount: targetAmount,
         callbackUrl: callbackUrl,
+        //subscribeType: SUBSCRIBE_TYPE[getSubscribeType(subscribeType)],
+        subscribeType: SUBSCRIBE_TYPE[subscribeType],
       });
       const existingWallet = await this.findWalletByAddress(targetWallet);
       if (existingWallet != null) {
@@ -96,15 +117,18 @@ export class TrxReqService {
     targetWallet,
     targetAmount,
     callbackUrl,
+    subscribeType,
   }: {
     targetWallet: string;
     targetAmount: string;
     callbackUrl: string;
+    subscribeType: string;
   }) {
     const existingSubscribe = await this.findSubscribe(
       targetWallet,
       targetAmount,
-      callbackUrl
+      callbackUrl,
+      subscribeType
     );
     if (existingSubscribe) {
       if (existingSubscribe.isActive) {

@@ -1,7 +1,12 @@
-import { IsBoolean, IsNumber } from 'class-validator';
+import { IsEnum, IsNumber } from 'class-validator';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { trxReqWallet } from './trxReqWallet.model';
 import { trxReqSubscribe } from './trxReqSubscribe.model';
+
+export enum SUBSCRIBE_DETAILS_STATUS {
+  PENDING = 'PENDING',
+  OVERFILLED = 'OVERFILLED',
+}
 
 @Entity('trxReqSubscribeDetails')
 export class trxReqSubscribeDetails {
@@ -12,13 +17,9 @@ export class trxReqSubscribeDetails {
   @IsNumber()
   currAmount: string;
 
-  @Column({ default: false })
-  @IsBoolean()
-  isAchieved: boolean;
-
-  @Column({ default: false })
-  @IsBoolean()
-  isNotified: boolean;
+  @Column()
+  @IsEnum(SUBSCRIBE_DETAILS_STATUS)
+  status: SUBSCRIBE_DETAILS_STATUS;
 
   @Column()
   lastTrxHash: string;

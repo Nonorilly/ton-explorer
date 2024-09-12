@@ -4,9 +4,9 @@ import { AppService } from './app.service';
 import * as Joi from '@hapi/joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { trxReqModule } from './trxReq/trxReq.module';
+import { TrxReqModule } from './trxReq/trxReq.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { notifyModule } from './notify/notify.module';
+import { NotifyModule } from './notify/notify.module';
 
 @Module({
   imports: [
@@ -36,8 +36,8 @@ import { notifyModule } from './notify/notify.module';
       }),
     }),
     ScheduleModule.forRoot(),
-    trxReqModule,
-    notifyModule,
+    TrxReqModule,
+    NotifyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,4 +12,8 @@ export class SubscribeWalletDto {
   @IsString()
   @IsNotEmpty()
   callbackUrl: string;
+
+  @IsString()
+  @IsNotEmpty()
+  subscribeType: string;
 }

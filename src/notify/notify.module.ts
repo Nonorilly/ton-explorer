@@ -2,23 +2,12 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { trxReqSubscribe } from '../trxReq/models/trxReqSubscribe.model';
-import { trxReqSubscribeDetails } from '../trxReq/models/trxReqSubscribeDetails.model';
-import { trxReqWallet } from '../trxReq/models/trxReqWallet.model';
-import { notifyService } from './notify.service';
+import { NotifyService } from './notify.service';
+import { notify } from './models/notify.model';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      trxReqSubscribe,
-      trxReqSubscribeDetails,
-      trxReqWallet,
-    ]),
-    ConfigModule,
-    HttpModule,
-  ],
-  providers: [notifyService],
-  exports: [],
-  controllers: [],
+  imports: [TypeOrmModule.forFeature([notify]), ConfigModule, HttpModule],
+  providers: [NotifyService],
+  exports: [NotifyService],
 })
-export class notifyModule {}
+export class NotifyModule {}

@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber } from 'class-validator';
 import {
   Column,
   CreateDateColumn,
@@ -9,6 +9,11 @@ import {
 } from 'typeorm';
 import { trxReqWallet } from './trxReqWallet.model';
 import { trxReqSubscribeDetails } from './trxReqSubscribeDetails.model';
+
+export enum SUBSCRIBE_TYPE {
+  SINGLE = 'SINGLE',
+  MULTIPLE = 'MULTIPLE',
+}
 
 @Entity('trxReqSubscribe')
 export class trxReqSubscribe {
@@ -25,6 +30,10 @@ export class trxReqSubscribe {
   @Column({ default: true })
   @IsBoolean()
   isActive: boolean;
+
+  @Column()
+  @IsEnum(SUBSCRIBE_TYPE)
+  subscribeType: SUBSCRIBE_TYPE;
 
   @CreateDateColumn()
   @Column({

@@ -4,26 +4,28 @@ import { SubscribeDto } from './models/subscribeDto.model';
 import { TrxReqService } from './trxReq.service';
 
 @Controller()
-export class trxReqController {
+export class TrxReqController {
   constructor(private readonly trxRequestService: TrxReqService) {}
 
   async makeSubscribe(@Body() input: SubscribeWalletDto) {
-    const { targetWallet, targetAmount, callbackUrl } = input;
+    const { targetWallet, targetAmount, callbackUrl, subscribeType } = input;
     const res = await this.trxRequestService.makeSubscribe({
       targetWallet,
       targetAmount,
       callbackUrl,
+      subscribeType,
     });
     return res;
   }
 
   async makeUnsubscribe(@Body() input: SubscribeWalletDto) {
     // нужна ли отдельная дто?
-    const { targetWallet, targetAmount, callbackUrl } = input;
+    const { targetWallet, targetAmount, callbackUrl, subscribeType } = input;
     const res = await this.trxRequestService.makeUnsubscribe({
       targetWallet,
       targetAmount,
       callbackUrl,
+      subscribeType,
     });
     return res;
   }

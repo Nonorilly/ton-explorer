@@ -8,19 +8,38 @@ import { Interval } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
-import { trxReqSubscribe } from 'src/trxReq/models/trxReqSubscribe.model';
-import { trxReqSubscribeDetails } from 'src/trxReq/models/trxReqSubscribeDetails.model';
 import { Repository } from 'typeorm';
 import { trxReqDto } from './models/notifyDto.model';
+import { notify } from './models/notify.model';
+import { trxReqSubscribeDetails } from 'src/trxReq/models/trxReqSubscribeDetails.model';
+import { trxReqSubscribe } from 'src/trxReq/models/trxReqSubscribe.model';
 
 const NOTIFY_INTERVAL = Number(process.env.NOTIFY_INTERVAL);
+
 @Injectable()
-export class notifyService {
+export class NotifyService {
   constructor(
     private readonly httpService: HttpService,
-    @InjectRepository(trxReqSubscribeDetails)
-    private trxReqSubscribeDetailsRepository: Repository<trxReqSubscribeDetails>
+    @InjectRepository(notify)
+    private notifyRepository: Repository<notify>
   ) {}
+
+  async createNotify(
+    subDetails: trxReqSubscribeDetails,
+    currRequest: trxReqSubscribe
+  ) {
+    const newNotify = new notify({
+      wallet: currRequest.wallet.address,
+      address: subDetails.address.address,
+      subscribeType: subDetails.subscribe.subscribeType,
+      status: subDetails.status,
+      targetAmount: currRequest.amount,
+      currAmount: subDetails.currAmount,
+      lastTrxHash: subDetails.lastTrxHash,
+      callbackUrl: currRequest.callbackUrl,
+    });
+    return await this.notifyRepository.save(newNotify);
+  }
 
   async sendData(config: AxiosRequestConfig) {
     try {
@@ -36,20 +55,25 @@ export class notifyService {
     }
   }
 
-  async sendNotification(
-    currAddressDetails: trxReqSubscribeDetails,
-    subscribe: trxReqSubscribe
-  ) {
-    const { currAmount, lastTrxHash, lastTrxTime, address } =
-      currAddressDetails;
-    const { wallet, callbackUrl, amount } = subscribe;
-    const body: trxReqDto = {
-      wallet: wallet.address,
-      address: address.address,
-      targetAmount: amount,
-      currAmount,
+  async sendNotification(currAddressDetails: notify) {
+    const {
+      wallet,
+      subscribeType,
+      targetAmount,
       lastTrxHash,
-      lastTrxTime,
+      address,
+      currAmount,
+      status,
+      callbackUrl,
+    } = currAddressDetails;
+    const body: trxReqDto = {
+      wallet,
+      subscribeType,
+      targetAmount,
+      lastTrxHash,
+      address,
+      currAmount,
+      status,
     };
     const notifyRequest: AxiosRequestConfig = {
       method: 'post',
@@ -58,33 +82,24 @@ export class notifyService {
     };
     try {
       await this.sendData(notifyRequest);
-      currAddressDetails.isNotified = true;
-      await this.trxReqSubscribeDetailsRepository.save(currAddressDetails);
+      currAddressDetails.processed = true;
+      await this.notifyRepository.save(currAddressDetails);
     } catch (err: any) {
-      console.log(`Cannot notify to ${subscribe.callbackUrl}: ${err}`);
+      console.log(`Cannot notify to ${callbackUrl}: ${err}`);
     }
   }
 
   @Interval(NOTIFY_INTERVAL)
   async checkReadyRequests() {
     const chunkSize = 50;
-    const readyReq = await this.trxReqSubscribeDetailsRepository
-      .createQueryBuilder('trxReqSubscribeDetails')
-      .leftJoinAndSelect('trxReqSubscribeDetails.subscribe', 'trxReqSubscribe')
-      .leftJoinAndSelect('trxReqSubscribe.wallet', 'trxWallet')
-      .leftJoinAndSelect('trxReqSubscribeDetails.address', 'trxAddress')
-      .where('trxReqSubscribe.isActive = :isActive', { isActive: true })
-      .andWhere('trxReqSubscribeDetails.isAchieved = :isAchieved', {
-        isAchieved: true,
-      })
-      .andWhere('trxReqSubscribeDetails.isNotified = :isNotified', {
-        isNotified: false,
-      })
+    const readyReq = await this.notifyRepository
+      .createQueryBuilder('notify')
+      .where('notify.processed = :processed', { processed: false })
       .getMany();
     for (let i = 0; i < readyReq.length; i += chunkSize) {
       const chunk = readyReq.slice(i, i + chunkSize);
-      const promises = chunk.map(async (currReq) => {
-        await this.sendNotification(currReq, currReq.subscribe);
+      const promises = chunk.map(async (currNotify) => {
+        await this.sendNotification(currNotify);
       });
       await Promise.all(promises);
     }

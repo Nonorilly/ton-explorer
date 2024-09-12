@@ -5,8 +5,9 @@ import { trxReqSubscribe } from './models/trxReqSubscribe.model';
 import { trxReqWallet } from './models/trxReqWallet.model';
 import { TrxReqService } from './trxReq.service';
 import { TrxReqProcessorService } from './trxReqProcessor.service';
-import { trxReqController } from './trxReq.controller';
+import { TrxReqController } from './trxReq.controller';
 import { trxReqSubscribeDetails } from './models/trxReqSubscribeDetails.model';
+import { NotifyModule } from 'src/notify/notify.module';
 
 @Module({
   imports: [
@@ -16,9 +17,10 @@ import { trxReqSubscribeDetails } from './models/trxReqSubscribeDetails.model';
       trxReqWallet,
     ]),
     ConfigModule,
+    NotifyModule,
   ],
   providers: [TrxReqService, TrxReqProcessorService],
   exports: [],
-  controllers: [trxReqController],
+  controllers: [TrxReqController],
 })
-export class trxReqModule {}
+export class TrxReqModule {}
